@@ -1,9 +1,36 @@
 # Plan completo (corto, medio y largo plazo)
 ## App instalable de minijuegos para aprender Agentes, Skills, Hooks, instrucciones, memoria/contexto y coste de tokens
 
-Relacionado: [[MAPA_PROYECTO]] · [[STEP_1_MINI_PLAN]] · [[AGENTS]]
+Relacionado: [[MAPA_PROYECTO]] · [[STEP_1_MINI_PLAN]] · [[ARQUITECTURA_PROYECTO]] · [[FUNCIONALIDAD_PROYECTO]] · [[COMO_LEVANTAR_PROYECTO]] · [[ESTILO_PROYECTO]] · [[AGENTS]]
 
 > Objetivo: crear una app **instalable en Windows** y, si es viable, **multiplataforma (iOS/Android)** orientada a enseñar uso práctico de flujos tipo Copilot/Claude (agentes, skills, hooks, instrucciones), incluyendo buenas prácticas de contexto/memoria y eficiencia de tokens.
+
+---
+
+## Estado actual del proyecto
+
+El proyecto ya tiene una base funcional, no parte de cero.
+
+Ya construido:
+- App Flutter en `app/` con nombre `cute_quests_ai`.
+- Pantalla principal `HomePage` con progreso, XP, quests y logros.
+- Tema visual inicial en `app/lib/core/app_theme.dart`.
+- Estructura modular por features: `home`, `quests` y `achievements`.
+- Datos demo de Fase 1 y Fase 2 en codigo.
+- Documentacion operativa: arquitectura, como levantar el proyecto, estilo y funcionalidad.
+- Sincronizacion de notas Markdown a Obsidian.
+- Skill repo-local `obsidian-markdown` para crear y editar notas claras para Obsidian.
+
+Todavia no construido:
+- Minijuegos jugables reales.
+- Estado interactivo para completar quests desde la app.
+- Persistencia local de XP, logros y progreso.
+- Motor comun de minijuegos y scoring.
+- Telemetria real.
+- Integracion con IA o backend.
+- Build instalable Windows validada.
+
+Implicacion para el plan: el siguiente paso no es crear la base, sino cerrar la fundacion y construir el primer minijuego jugable extremo a extremo.
 
 ---
 
@@ -53,7 +80,8 @@ Al terminar, el usuario debe poder:
   - Sobredimensionado si el foco es aprendizaje textual y flujos IA.
 
 ### Recomendación final
-- **MVP**: Flutter + backend liviano.
+- **MVP actual**: Flutter client-first, usando datos locales mientras se valida la experiencia jugable.
+- **Backend**: posponer hasta que haya scoring, telemetria o sincronizacion que lo justifiquen.
 - **Evolución**: mantener arquitectura desacoplada para cambiar proveedor LLM sin reescribir el juego.
 
 ---
@@ -123,17 +151,28 @@ Al terminar, el usuario debe poder:
 
 ## Corto plazo (0–3 meses) — **MVP funcional**
 ### Objetivos
-- Validar problema/solución y retención inicial.
+- Convertir la demo Flutter actual en un primer vertical slice jugable.
+- Validar problema/solución y retención inicial con usuarios reales.
 - Publicar primera versión instalable en Windows.
 
 ### Entregables
-- Arquitectura base (cliente + API + capa IA abstracta).
-- 4 minijuegos base:
+- Cierre de fundacion:
+  - Estado interactivo de progreso.
+  - Persistencia local de XP, logros y quests.
+  - Contrato comun para minijuegos.
+  - Navegacion desde Home hacia minijuegos.
+- Primer minijuego extremo a extremo:
+  - `Prompt Surgery v1` como candidato principal.
+  - Pantalla de instrucciones.
+  - Input del usuario.
+  - Evaluacion inicial con reglas locales.
+  - Score, XP y feedback pedagogico.
+- Despues del primer vertical slice, ampliar a 4 minijuegos base:
   - Prompt Surgery
   - Context Budget
   - Memory Manager
   - Token Tycoon (versión simple)
-- Sistema de usuario local/cloud básico.
+- Sistema de usuario local basico.
 - Métricas mínimas: tokens, coste estimado, tiempo, score.
 - Empaquetado Windows (instalador).
 
@@ -190,31 +229,77 @@ Al terminar, el usuario debe poder:
 ## 6) Plan de implementación técnica (detallado)
 
 ## Fase 0 — Descubrimiento (2–4 semanas)
-- Investigación usuarios (entrevistas + encuesta).
-- Definir 8–12 jobs-to-be-done.
-- Priorizar contenidos de mayor impacto (matriz valor/esfuerzo).
-- Prototipo navegable (Figma).
+- Estado: parcialmente cubierta por el plan, la demo Flutter y la documentacion actual.
+- Pendiente:
+  - Investigacion usuarios (entrevistas + encuesta).
+  - Definir 8–12 jobs-to-be-done.
+  - Priorizar contenidos de mayor impacto (matriz valor/esfuerzo).
+  - Especificar en papel los 4 minijuegos MVP.
+  - Usar la demo actual como prototipo navegable inicial.
 
 ## Fase 1 — Fundación (4–6 semanas)
-- Setup repositorio monorepo o estructura modular.
-- CI/CD inicial + quality gates (lint, tests, build).
+- Estado: iniciada.
+- Ya existe app Flutter, estructura modular, tema visual, Home demo y documentacion base.
+- Cerrar fundacion con:
+  - Estado local para progreso.
+  - Persistencia local.
+  - Navegacion preparada para minijuegos.
+  - Contrato de minijuego: entrada, reglas, scoring, feedback y recompensa.
+  - Quality gates minimos: `flutter analyze` y `flutter test`.
 - Módulos core:
-  - Auth
-  - Perfil de progreso
+  - Perfil de progreso local
   - Catálogo de minijuegos
-  - Motor de puntuación
-- Instrumentación analítica desde día 1.
+  - Motor de puntuación local
+  - Registro local de partidas
+- Módulos aplazados:
+  - Auth
+  - Backend
+  - Capa IA real
+- Instrumentación analítica desde día 1, empezando local y preparada para backend.
 
 ## Fase 2 — MVP jugable (6–8 semanas)
-- Implementar 4 minijuegos + tutorial.
+- Implementar primero `Prompt Surgery v1` de extremo a extremo.
+- Validar que completar un minijuego actualiza XP, logros y estado de quest.
+- Despues implementar:
+  - `Context Budget v1`
+  - `Memory Manager v1`
+  - `Token Tycoon v1`
 - Sistema de feedback inmediato y explicación pedagógica.
-- Pruebas de usabilidad con 20–30 usuarios.
+- Pruebas de usabilidad con 5–10 usuarios al cerrar el primer minijuego.
+- Pruebas de usabilidad con 20–30 usuarios al cerrar los 4 minijuegos.
 - Iteración rápida quincenal.
 
 ## Fase 3 — Multiplataforma y monetización (8–12 semanas)
 - Build y publicación Android/iOS.
 - Cuenta cloud + sincronización de progreso.
 - Modelo de negocio inicial (freemium / suscripción / licencias).
+
+---
+
+## 6.1) Proximo vertical slice recomendado
+
+El primer vertical slice deberia ser `Prompt Surgery v1`, porque conecta directamente con el objetivo pedagogico y no necesita backend para una primera version.
+
+Alcance minimo:
+- Lista de 3 prompts problematicos.
+- Objetivo claro para cada prompt.
+- Campo para que el usuario proponga una version mejorada.
+- Reglas locales de evaluacion:
+  - Claridad de objetivo.
+  - Restricciones explicitas.
+  - Formato de salida pedido.
+  - Evitar contexto innecesario.
+- Score final.
+- XP ganada.
+- Feedback corto y accionable.
+- Actualizacion de progreso en Home.
+
+Queda fuera de la primera version:
+- Evaluacion con IA.
+- Ranking online.
+- Login.
+- Sincronizacion cloud.
+- Tienda o monetizacion.
 
 ---
 
@@ -256,8 +341,8 @@ Al terminar, el usuario debe poder:
 
 ## Etapa MVP
 - 1 Product Manager / Learning Designer.
-- 1–2 devs cliente (Flutter).
-- 1 dev backend.
+- 1 dev cliente Flutter.
+- 1 dev backend solo cuando entren login, sincronizacion cloud o telemetria real.
 - 1 diseñador UX/UI (part-time).
 - 1 QA (part-time/automatización).
 
@@ -295,24 +380,27 @@ Al terminar, el usuario debe poder:
 
 ## 12) Backlog inicial priorizado (primeros 90 días)
 
-1. Onboarding interactivo (obligatorio).
-2. Motor de scoring común para minijuegos.
-3. Prompt Surgery v1.
-4. Context Budget v1.
-5. Memory Manager v1.
-6. Token Tycoon v1.
-7. Dashboard básico de progreso.
-8. Build instalable Windows.
-9. Telemetría y panel interno.
-10. Test con cohorte piloto (20–50 usuarios).
+1. Convertir Home demo en Home interactiva.
+2. Persistir progreso local: XP, quests completadas y logros.
+3. Definir contrato comun de minijuego.
+4. Implementar `Prompt Surgery v1` de extremo a extremo.
+5. Conectar recompensa de `Prompt Surgery v1` con Home.
+6. Agregar `flutter analyze` y `flutter test` como verificacion minima.
+7. Implementar `Context Budget v1`.
+8. Implementar `Memory Manager v1`.
+9. Implementar `Token Tycoon v1` simple.
+10. Crear build instalable Windows.
+11. Agregar telemetria local o mockeada.
+12. Test con cohorte piloto pequena (5–10 usuarios) antes de ampliar a 20–50.
 
 ---
 
 ## 13) Plan de entregas (hitos)
 
-- **Hito 1 (Semana 2–4):** PRD + prototipo UX + arquitectura.
-- **Hito 2 (Semana 6–8):** Core app + primer minijuego.
-- **Hito 3 (Semana 10–12):** 4 minijuegos + analítica + beta Windows.
+- **Hito 0 (hecho):** base Flutter + Home demo + documentacion + sincronizacion Obsidian.
+- **Hito 1 (siguiente):** Home interactiva + persistencia local + contrato de minijuegos.
+- **Hito 2 (Semana 2–4):** `Prompt Surgery v1` jugable extremo a extremo.
+- **Hito 3 (Semana 6–8):** 4 minijuegos + analítica local/mockeada + beta Windows.
 - **Hito 4 (Semana 14–18):** iteración por feedback + preparación Android.
 - **Hito 5 (Semana 20+):** salida Android/iOS + growth loops.
 
@@ -320,10 +408,10 @@ Al terminar, el usuario debe poder:
 
 ## 14) Recomendación práctica para empezar mañana
 
-1. Elegir stack: **Flutter**.
-2. Definir PRD de 1 página con hipótesis de valor.
-3. Diseñar 4 minijuegos MVP en papel (inputs, reglas, scoring).
-4. Construir un vertical slice completo (1 minijuego extremo a extremo).
+1. Cerrar `STEP_1_MINI_PLAN`: confirmar que la base Flutter arranca y que Obsidian recibe las notas.
+2. Definir el contrato comun de minijuego en codigo.
+3. Convertir las quests demo en estado interactivo.
+4. Construir `Prompt Surgery v1` como vertical slice completo.
 5. Medir uso real y ajustar antes de escalar contenido.
 
 ---
