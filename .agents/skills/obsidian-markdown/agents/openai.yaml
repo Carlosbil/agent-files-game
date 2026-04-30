@@ -1,0 +1,4 @@
+interface:
+  display_name: "Obsidian Markdown"
+  short_description: "Notas Markdown claras para Obsidian"
+  default_prompt: "Usa $obsidian-markdown para crear o editar notas Markdown pensadas para Obsidian."
