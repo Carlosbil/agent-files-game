@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flutter Unit Tests"
+  short_description: "Tests unitarios claros para Flutter"
+  default_prompt: "Usa $flutter-unit-tests para crear tests unitarios de Flutter."

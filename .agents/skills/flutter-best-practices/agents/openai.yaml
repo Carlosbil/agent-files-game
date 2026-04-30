@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flutter Best Practices"
+  short_description: "Calidad y buenas practicas Flutter"
+  default_prompt: "Usa $flutter-best-practices para implementar codigo Flutter de alta calidad."
