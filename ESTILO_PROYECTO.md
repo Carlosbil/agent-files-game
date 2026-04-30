@@ -74,7 +74,7 @@ Patron recomendado:
 - Lenguaje humano, no administrativo.
 
 Ejemplos alineados:
-- `Setup de Heroina`
+- `Setup de Campeón`
 - `Mapa de Minijuegos`
 - `Prompt Surgery v1`
 - `Context Budget v1`

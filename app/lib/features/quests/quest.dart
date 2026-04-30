@@ -19,19 +19,19 @@ class Quest {
 final phaseOneQuests = <Quest>[
   const Quest(
     id: 'f1-01',
-    title: 'Setup de Heroína',
-    description: 'Crea tu perfil y termina el onboarding interactivo.',
+    title: 'Setup de Campeón',
+    description:
+        'Crea tu perfil de Campeón y termina el onboarding interactivo.',
     xp: 80,
     phase: 1,
-    completed: true,
   ),
   const Quest(
     id: 'f1-02',
-    title: 'Mapa de Minijuegos',
-    description: 'Revisa el catálogo inicial y marca 4 minijuegos MVP.',
+    title: 'Ruta de Banderas IA',
+    description:
+        'Camina por 3 submundos y supera retos de agentes, skills e instrucciones.',
     xp: 120,
     phase: 1,
-    completed: true,
   ),
 ];
 

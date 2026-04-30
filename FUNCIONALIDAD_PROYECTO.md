@@ -19,11 +19,15 @@ Incluye:
 - Estado de quest completada o pendiente.
 - Recompensa de XP por quest.
 - Lista de logros bloqueados y desbloqueados.
+- Navegacion desde las quests de Fase 1 hacia dos juegos jugables.
+- Actualizacion de XP en la sesion al completar los juegos de Fase 1.
+- Juego `Setup de Campeón`: configura nombre, rol, fortaleza y objetivo.
+- Juego `Mapa de Minijuegos`: selecciona y evalua los 4 minijuegos MVP.
 
 ## Quests demo actuales
 
 Fase 1:
-- `Setup de Heroina`: crea perfil y termina onboarding interactivo.
+- `Setup de Campeón`: crea perfil y termina onboarding interactivo.
 - `Mapa de Minijuegos`: revisa catalogo inicial y marca 4 minijuegos MVP.
 
 Fase 2:
@@ -39,14 +43,15 @@ Fase 2:
 
 ## Logica actual
 
-La logica implementada es simple:
+La logica implementada es local y determinista:
 
-1. Se cargan quests estaticas desde `quest.dart`.
+1. Se cargan quests base desde `quest.dart`.
 2. Se juntan quests de Fase 1 y Fase 2.
-3. Se suman los XP de quests completadas.
-4. Se renderiza el progreso y las listas en `HomePage`.
+3. `HomePage` mantiene en memoria las quests completadas durante la sesion.
+4. Las quests de Fase 1 abren juegos Flutter propios.
+5. Al completar un juego, la pantalla devuelve resultado positivo y Home suma XP.
 
-No hay interaccion real de completar quests en runtime. El estado `completed` esta fijado en codigo.
+Todavia no hay persistencia local: si se reinicia la app, el progreso vuelve al estado inicial.
 
 ## Funcionalidad planificada para el MVP
 
@@ -91,9 +96,8 @@ Metricas de aprendizaje:
 
 ## Pendientes funcionales
 
-- Convertir quests demo en progreso interactivo.
 - Definir un contrato comun para minijuegos.
-- Persistir XP, logros y estado de quests.
+- Persistir XP, logros y estado de quests entre sesiones.
 - Implementar minijuegos reales.
 - Agregar evaluacion de respuestas.
 - Agregar telemetria.

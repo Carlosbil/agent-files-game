@@ -8,6 +8,9 @@ Este demo implementa una base visual para **Fase 1 (Fundación)** y **Fase 2 (MV
   - Progreso de jugador (XP/Nivel).
   - Quests de Fase 1 y Fase 2.
   - Logros bloqueados/desbloqueados.
+- Juegos iniciales de Fase 1:
+  - `Setup de Campeón`, para crear perfil y cerrar onboarding.
+  - `Mapa de Minijuegos`, para escoger los 4 minijuegos MVP.
 - Estructura modular para crecer hacia minijuegos.
 
 ## Instalación en este entorno (Linux)
