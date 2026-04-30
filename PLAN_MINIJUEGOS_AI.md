@@ -1,6 +1,8 @@
 # Plan completo (corto, medio y largo plazo)
 ## App instalable de minijuegos para aprender Agentes, Skills, Hooks, instrucciones, memoria/contexto y coste de tokens
 
+Relacionado: [[MAPA_PROYECTO]] · [[STEP_1_MINI_PLAN]] · [[AGENTS]]
+
 > Objetivo: crear una app **instalable en Windows** y, si es viable, **multiplataforma (iOS/Android)** orientada a enseñar uso práctico de flujos tipo Copilot/Claude (agentes, skills, hooks, instrucciones), incluyendo buenas prácticas de contexto/memoria y eficiencia de tokens.
 
 ---
