@@ -16,7 +16,25 @@ enum CropType {
   final String icon;
 }
 
-enum FarmCommandType { move, turnLeft, turnRight, till, plant, water, harvest, scan }
+enum FarmCommandType {
+  move,
+  turnLeft,
+  turnRight,
+  till,
+  plant,
+  water,
+  harvest,
+  scan
+}
+
+enum CodeLanguage {
+  python('Python'),
+  java('Java');
+
+  const CodeLanguage(this.label);
+
+  final String label;
+}
 
 class FarmCommand {
   const FarmCommand(this.type, {this.crop, required this.sourceLine});
@@ -58,7 +76,8 @@ class FarmTile {
   bool get hasCrop => crop != null;
   bool get readyToHarvest => crop != null && watered;
 
-  FarmTile copyWith({bool? tilled, CropType? crop, bool? watered, bool clearCrop = false}) {
+  FarmTile copyWith(
+      {bool? tilled, CropType? crop, bool? watered, bool clearCrop = false}) {
     return FarmTile(
       tilled: tilled ?? this.tilled,
       crop: clearCrop ? null : crop ?? this.crop,
@@ -106,9 +125,12 @@ class ResourceBag {
 
   ResourceBag addCrop(CropType crop) {
     return switch (crop) {
-      CropType.hay => copyWith(hay: hay + crop.cropYield, research: research + 1),
-      CropType.carrot => copyWith(carrots: carrots + crop.cropYield, research: research + 2),
-      CropType.pumpkin => copyWith(pumpkins: pumpkins + crop.cropYield, research: research + 4),
+      CropType.hay =>
+        copyWith(hay: hay + crop.cropYield, research: research + 1),
+      CropType.carrot =>
+        copyWith(carrots: carrots + crop.cropYield, research: research + 2),
+      CropType.pumpkin =>
+        copyWith(pumpkins: pumpkins + crop.cropYield, research: research + 4),
     };
   }
 }
@@ -225,7 +247,8 @@ class FarmGameState {
 
   FarmGameState appendLog(String message) {
     final nextLog = [...log, message];
-    final trimmed = nextLog.length > 12 ? nextLog.sublist(nextLog.length - 12) : nextLog;
+    final trimmed =
+        nextLog.length > 12 ? nextLog.sublist(nextLog.length - 12) : nextLog;
     return copyWith(log: trimmed);
   }
 
@@ -243,7 +266,8 @@ class FarmGameState {
     }
 
     return copyWith(
-      resources: resources.copyWith(research: resources.research - technology.researchCost),
+      resources: resources.copyWith(
+          research: resources.research - technology.researchCost),
       unlockedTechIds: unlocked,
     ).appendLog('Tecnología desbloqueada: ${technology.name}.');
   }
@@ -256,67 +280,26 @@ class SimulationResult {
   final List<String> parseErrors;
 }
 
-ParseResult parseProgram(String source) {
-  final lines = source.split('\n');
-  final errors = <String>[];
-  final commands = <FarmCommand>[];
+const _maxRepeatCount = 20;
+const _maxInstructions = 120;
 
-  void parseBlock(int start, int end, int repeatCount) {
-    for (var iteration = 0; iteration < repeatCount; iteration++) {
-      var lineIndex = start;
-      while (lineIndex < end) {
-        final raw = lines[lineIndex];
-        final line = _cleanLine(raw);
-        if (line.isEmpty) {
-          lineIndex++;
-          continue;
-        }
-
-        if (line == '}' || line == 'end') {
-          errors.add('Línea ${lineIndex + 1}: cierre de repeat sin apertura.');
-          lineIndex++;
-          continue;
-        }
-
-        final repeatMatch = RegExp(r'^repeat\s+(\d+)\s*\{?$').firstMatch(line);
-        if (repeatMatch != null) {
-          final count = int.parse(repeatMatch.group(1)!);
-          final close = _findRepeatClose(lines, lineIndex + 1, end);
-          if (close == -1) {
-            errors.add('Línea ${lineIndex + 1}: repeat sin cierre "}" o "end".');
-            return;
-          }
-          if (count > 20) {
-            errors.add('Línea ${lineIndex + 1}: repeat máximo permitido es 20.');
-          } else {
-            parseBlock(lineIndex + 1, close, count);
-          }
-          lineIndex = close + 1;
-          continue;
-        }
-
-        final command = _parseCommand(line, lineIndex + 1, errors);
-        if (command != null) {
-          commands.add(command);
-        }
-        lineIndex++;
-      }
-    }
-  }
-
-  parseBlock(0, lines.length, 1);
-  if (commands.length > 120) {
-    return ParseResult(
-      commands: commands.take(120).toList(),
-      errors: [...errors, 'El programa se recortó a 120 instrucciones para proteger el dron.'],
-    );
-  }
-  return ParseResult(commands: commands, errors: errors);
+ParseResult parseProgram(String source,
+    {CodeLanguage language = CodeLanguage.python}) {
+  final result = switch (language) {
+    CodeLanguage.python => _parsePythonProgram(source),
+    CodeLanguage.java => _parseJavaProgram(source),
+  };
+  return _limitInstructionCount(result);
 }
 
-SimulationResult runProgram(FarmGameState state, String source) {
-  final parsed = parseProgram(source);
-  var next = state.copyWith(log: ['Ejecutando ${parsed.commands.length} instrucciones...']);
+SimulationResult runProgram(
+  FarmGameState state,
+  String source, {
+  CodeLanguage language = CodeLanguage.python,
+}) {
+  final parsed = parseProgram(source, language: language);
+  var next = state
+      .copyWith(log: ['Ejecutando ${parsed.commands.length} instrucciones...']);
 
   for (final error in parsed.errors) {
     next = next.appendLog('ERROR: $error');
@@ -330,65 +313,268 @@ SimulationResult runProgram(FarmGameState state, String source) {
   }
 
   return SimulationResult(
-    state: next.appendLog('Ejecución terminada. Recursos: ${next.resources.totalHarvest} cosechas.'),
+    state: next.appendLog(
+        'Ejecución terminada. Recursos: ${next.resources.totalHarvest} cosechas.'),
     parseErrors: const [],
   );
 }
 
-String defaultProgram = '''# Automatiza la primera parcela
-repeat 3 {
-  till
-  plant hay
-  water
-  harvest
-  move
-}
-turn_right
-move
-turn_right
-repeat 3 {
-  till
-  plant hay
-  water
-  harvest
-  move
-}''';
-
-String _cleanLine(String raw) {
-  final commentStart = raw.indexOf('#');
-  final withoutComment = commentStart == -1 ? raw : raw.substring(0, commentStart);
-  return withoutComment.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
-}
-
-FarmCommand? _parseCommand(String line, int sourceLine, List<String> errors) {
-  final normalized = line.replaceAll('()', '').replaceAll('_', ' ');
-  return switch (normalized) {
-    'move' || 'move forward' => FarmCommand(FarmCommandType.move, sourceLine: sourceLine),
-    'left' || 'turn left' => FarmCommand(FarmCommandType.turnLeft, sourceLine: sourceLine),
-    'right' || 'turn right' => FarmCommand(FarmCommandType.turnRight, sourceLine: sourceLine),
-    'till' => FarmCommand(FarmCommandType.till, sourceLine: sourceLine),
-    'water' => FarmCommand(FarmCommandType.water, sourceLine: sourceLine),
-    'harvest' => FarmCommand(FarmCommandType.harvest, sourceLine: sourceLine),
-    'scan' => FarmCommand(FarmCommandType.scan, sourceLine: sourceLine),
-    _ => _parsePlant(normalized, sourceLine, errors),
+String defaultProgramFor(CodeLanguage language) {
+  return switch (language) {
+    CodeLanguage.python => _defaultPythonProgram,
+    CodeLanguage.java => _defaultJavaProgram,
   };
 }
 
-FarmCommand? _parsePlant(String line, int sourceLine, List<String> errors) {
-  final match = RegExp(r'^plant\s+([a-z]+)$').firstMatch(line);
+final String defaultProgram = defaultProgramFor(CodeLanguage.python);
+
+const _defaultPythonProgram = '''# Automatiza la primera parcela
+for _ in range(3):
+    till()
+    plant("hay")
+    water()
+    harvest()
+    move()
+turn_right()
+move()
+turn_right()
+for _ in range(3):
+    till()
+    plant("hay")
+    water()
+    harvest()
+    move()''';
+
+const _defaultJavaProgram = '''// Automatiza la primera parcela
+for (int i = 0; i < 3; i++) {
+  till();
+  plant("hay");
+  water();
+  harvest();
+  move();
+}
+turnRight();
+move();
+turnRight();
+for (int i = 0; i < 3; i++) {
+  till();
+  plant("hay");
+  water();
+  harvest();
+  move();
+}''';
+
+ParseResult _limitInstructionCount(ParseResult result) {
+  if (result.commands.length <= _maxInstructions) {
+    return result;
+  }
+
+  return ParseResult(
+    commands: result.commands.take(_maxInstructions).toList(),
+    errors: [
+      ...result.errors,
+      'El programa se recortó a $_maxInstructions instrucciones para proteger el dron.'
+    ],
+  );
+}
+
+ParseResult _parsePythonProgram(String source) {
+  final lines = _pythonSourceLines(source);
+  final errors = <String>[];
+  final block = _parsePythonBlock(lines, 0, 0, errors);
+  return ParseResult(commands: block.commands, errors: errors);
+}
+
+_ParsedBlock _parsePythonBlock(
+    List<_ProgramLine> lines, int start, int indent, List<String> errors) {
+  final commands = <FarmCommand>[];
+  var lineIndex = start;
+
+  while (lineIndex < lines.length) {
+    final line = lines[lineIndex];
+    if (line.indent < indent) {
+      break;
+    }
+    if (line.indent > indent) {
+      errors.add('Línea ${line.number}: sangría inesperada.');
+      lineIndex++;
+      continue;
+    }
+
+    final forMatch = RegExp(r'^for\s+\w+\s+in\s+range\(\s*(\d+)\s*\):$')
+        .firstMatch(line.code);
+    if (forMatch != null) {
+      if (lineIndex + 1 >= lines.length ||
+          lines[lineIndex + 1].indent <= line.indent) {
+        errors.add('Línea ${line.number}: for sin bloque indentado.');
+        lineIndex++;
+        continue;
+      }
+
+      final count = int.parse(forMatch.group(1)!);
+      final block = _parsePythonBlock(
+          lines, lineIndex + 1, lines[lineIndex + 1].indent, errors);
+      if (count > _maxRepeatCount) {
+        errors.add(
+            'Línea ${line.number}: for máximo permitido es $_maxRepeatCount.');
+      } else {
+        for (var iteration = 0; iteration < count; iteration++) {
+          commands.addAll(block.commands);
+        }
+      }
+      lineIndex = block.nextIndex;
+      continue;
+    }
+
+    final command = _parsePythonCommand(line.code, line.number, errors);
+    if (command != null) {
+      commands.add(command);
+    }
+    lineIndex++;
+  }
+
+  return _ParsedBlock(commands, lineIndex);
+}
+
+List<_ProgramLine> _pythonSourceLines(String source) {
+  final rawLines = source.split('\n');
+  final lines = <_ProgramLine>[];
+
+  for (var index = 0; index < rawLines.length; index++) {
+    final withoutComment = _stripAfter(rawLines[index], '#');
+    final code =
+        withoutComment.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    if (code.isEmpty) {
+      continue;
+    }
+    lines.add(_ProgramLine(
+        number: index + 1,
+        indent: _leadingSpaceCount(withoutComment),
+        code: code));
+  }
+
+  return lines;
+}
+
+FarmCommand? _parsePythonCommand(
+    String line, int sourceLine, List<String> errors) {
+  final normalized = line.replaceAll(RegExp(r'\s+'), '');
+  return switch (normalized) {
+    'move()' => FarmCommand(FarmCommandType.move, sourceLine: sourceLine),
+    'turn_left()' =>
+      FarmCommand(FarmCommandType.turnLeft, sourceLine: sourceLine),
+    'turn_right()' =>
+      FarmCommand(FarmCommandType.turnRight, sourceLine: sourceLine),
+    'till()' => FarmCommand(FarmCommandType.till, sourceLine: sourceLine),
+    'water()' => FarmCommand(FarmCommandType.water, sourceLine: sourceLine),
+    'harvest()' => FarmCommand(FarmCommandType.harvest, sourceLine: sourceLine),
+    'scan()' => FarmCommand(FarmCommandType.scan, sourceLine: sourceLine),
+    _ =>
+      _parsePlantCall(normalized, sourceLine, errors, languageName: 'Python'),
+  };
+}
+
+ParseResult _parseJavaProgram(String source) {
+  final lines = source.split('\n');
+  final errors = <String>[];
+  final block = _parseJavaBlock(lines, 0, lines.length, errors);
+  return ParseResult(commands: block.commands, errors: errors);
+}
+
+_ParsedBlock _parseJavaBlock(
+    List<String> lines, int start, int end, List<String> errors) {
+  final commands = <FarmCommand>[];
+  var lineIndex = start;
+
+  while (lineIndex < end) {
+    final line = _cleanJavaLine(lines[lineIndex]);
+    if (line.isEmpty) {
+      lineIndex++;
+      continue;
+    }
+
+    if (_isJavaClose(line)) {
+      errors.add('Línea ${lineIndex + 1}: cierre de bloque sin apertura.');
+      lineIndex++;
+      continue;
+    }
+
+    final forMatch = _javaForMatch(line);
+    if (forMatch != null) {
+      final close = _findJavaBlockClose(lines, lineIndex + 1, end);
+      if (close == -1) {
+        errors.add('Línea ${lineIndex + 1}: for sin cierre "}".');
+        return _ParsedBlock(commands, end);
+      }
+
+      final count = int.parse(forMatch.group(1)!);
+      final block = _parseJavaBlock(lines, lineIndex + 1, close, errors);
+      if (count > _maxRepeatCount) {
+        errors.add(
+            'Línea ${lineIndex + 1}: for máximo permitido es $_maxRepeatCount.');
+      } else {
+        for (var iteration = 0; iteration < count; iteration++) {
+          commands.addAll(block.commands);
+        }
+      }
+      lineIndex = close + 1;
+      continue;
+    }
+
+    final command = _parseJavaCommand(line, lineIndex + 1, errors);
+    if (command != null) {
+      commands.add(command);
+    }
+    lineIndex++;
+  }
+
+  return _ParsedBlock(commands, lineIndex);
+}
+
+String _cleanJavaLine(String raw) {
+  return _stripAfter(raw, '//').trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+RegExpMatch? _javaForMatch(String line) {
+  return RegExp(
+    r'^for\s*\(\s*(?:int|var)?\s*\w+\s*=\s*0\s*;\s*\w+\s*<\s*(\d+)\s*;\s*\w+\+\+\s*\)\s*\{?$',
+    caseSensitive: false,
+  ).firstMatch(line);
+}
+
+FarmCommand? _parseJavaCommand(
+    String line, int sourceLine, List<String> errors) {
+  final normalized = line
+      .replaceAll(RegExp(r'\s+'), '')
+      .replaceFirst(RegExp(r';$'), '')
+      .toLowerCase();
+  return switch (normalized) {
+    'move()' => FarmCommand(FarmCommandType.move, sourceLine: sourceLine),
+    'turnleft()' =>
+      FarmCommand(FarmCommandType.turnLeft, sourceLine: sourceLine),
+    'turnright()' =>
+      FarmCommand(FarmCommandType.turnRight, sourceLine: sourceLine),
+    'till()' => FarmCommand(FarmCommandType.till, sourceLine: sourceLine),
+    'water()' => FarmCommand(FarmCommandType.water, sourceLine: sourceLine),
+    'harvest()' => FarmCommand(FarmCommandType.harvest, sourceLine: sourceLine),
+    'scan()' => FarmCommand(FarmCommandType.scan, sourceLine: sourceLine),
+    _ => _parsePlantCall(normalized, sourceLine, errors, languageName: 'Java'),
+  };
+}
+
+FarmCommand? _parsePlantCall(String line, int sourceLine, List<String> errors,
+    {required String languageName}) {
+  final match =
+      RegExp(r'''^plant\(\s*["']?([a-z]+)["']?\s*\)$''', caseSensitive: false)
+          .firstMatch(line);
   if (match == null) {
-    errors.add('Línea $sourceLine: instrucción desconocida "$line".');
+    errors.add(
+        'Línea $sourceLine: instrucción $languageName desconocida "$line".');
     return null;
   }
 
-  final cropName = match.group(1)!;
-  CropType? crop;
-  for (final candidate in CropType.values) {
-    if (candidate.name == cropName) {
-      crop = candidate;
-      break;
-    }
-  }
+  final cropName = match.group(1)!.toLowerCase();
+  final crop = _cropByName(cropName);
   if (crop == null) {
     errors.add('Línea $sourceLine: cultivo desconocido "$cropName".');
     return null;
@@ -396,21 +582,73 @@ FarmCommand? _parsePlant(String line, int sourceLine, List<String> errors) {
   return FarmCommand(FarmCommandType.plant, crop: crop, sourceLine: sourceLine);
 }
 
-int _findRepeatClose(List<String> lines, int start, int end) {
-  var depth = 0;
-  for (var i = start; i < end; i++) {
-    final line = _cleanLine(lines[i]);
-    if (RegExp(r'^repeat\s+\d+\s*\{?$').hasMatch(line)) {
-      depth++;
+CropType? _cropByName(String cropName) {
+  for (final candidate in CropType.values) {
+    if (candidate.name == cropName) {
+      return candidate;
     }
-    if (line == '}' || line == 'end') {
+  }
+  return null;
+}
+
+int _findJavaBlockClose(List<String> lines, int start, int end) {
+  var depth = 0;
+  for (var index = start; index < end; index++) {
+    final line = _cleanJavaLine(lines[index]);
+    if (line.isEmpty) {
+      continue;
+    }
+    if (_isJavaClose(line)) {
       if (depth == 0) {
-        return i;
+        return index;
       }
       depth--;
+      continue;
+    }
+    if (_javaForMatch(line) != null) {
+      depth++;
     }
   }
   return -1;
+}
+
+bool _isJavaClose(String line) => line == '}' || line == '};';
+
+String _stripAfter(String value, String marker) {
+  final markerStart = value.indexOf(marker);
+  return markerStart == -1 ? value : value.substring(0, markerStart);
+}
+
+int _leadingSpaceCount(String value) {
+  var count = 0;
+  for (final unit in value.codeUnits) {
+    if (unit == 32) {
+      count++;
+      continue;
+    }
+    if (unit == 9) {
+      count += 4;
+      continue;
+    }
+    break;
+  }
+  return count;
+}
+
+class _ProgramLine {
+  const _ProgramLine(
+      {required this.number, required this.indent, required this.code});
+
+  final int number;
+  final int indent;
+  final String code;
+}
+
+class _ParsedBlock {
+  const _ParsedBlock(this.commands, this.nextIndex);
+
+  final List<FarmCommand> commands;
+  final int nextIndex;
 }
 
 FarmGameState _applyCommand(FarmGameState state, FarmCommand command) {
@@ -425,61 +663,84 @@ FarmGameState _applyCommand(FarmGameState state, FarmCommand command) {
       };
       final x = math.max(0, math.min(farmSize - 1, state.droneX + dx));
       final y = math.max(0, math.min(farmSize - 1, state.droneY + dy));
-      return next.copyWith(droneX: x, droneY: y).appendLog('L${command.sourceLine}: dron en ($x, $y).');
+      return next
+          .copyWith(droneX: x, droneY: y)
+          .appendLog('L${command.sourceLine}: dron en ($x, $y).');
     case FarmCommandType.turnLeft:
-      final direction = Direction.values[(state.direction.index - 1) % Direction.values.length];
-      return next.copyWith(direction: direction).appendLog('L${command.sourceLine}: giro izquierda.');
+      final direction = Direction
+          .values[(state.direction.index - 1) % Direction.values.length];
+      return next
+          .copyWith(direction: direction)
+          .appendLog('L${command.sourceLine}: giro izquierda.');
     case FarmCommandType.turnRight:
-      final direction = Direction.values[(state.direction.index + 1) % Direction.values.length];
-      return next.copyWith(direction: direction).appendLog('L${command.sourceLine}: giro derecha.');
+      final direction = Direction
+          .values[(state.direction.index + 1) % Direction.values.length];
+      return next
+          .copyWith(direction: direction)
+          .appendLog('L${command.sourceLine}: giro derecha.');
     case FarmCommandType.till:
       return next
-          .withTile(state.droneX, state.droneY, state.currentTile.copyWith(tilled: true))
+          .withTile(state.droneX, state.droneY,
+              state.currentTile.copyWith(tilled: true))
           .appendLog('L${command.sourceLine}: suelo preparado.');
     case FarmCommandType.plant:
       final crop = command.crop!;
       if (!state.isCropUnlocked(crop)) {
-        return next.appendLog('L${command.sourceLine}: ${crop.label} está bloqueado.');
+        return next
+            .appendLog('L${command.sourceLine}: ${crop.label} está bloqueado.');
       }
       if (!state.currentTile.tilled || state.currentTile.hasCrop) {
-        return next.appendLog('L${command.sourceLine}: no se puede plantar aquí.');
+        return next
+            .appendLog('L${command.sourceLine}: no se puede plantar aquí.');
       }
       if (state.resources.seeds <= 0) {
         return next.appendLog('L${command.sourceLine}: no quedan semillas.');
       }
       return next
-          .copyWith(resources: state.resources.copyWith(seeds: state.resources.seeds - 1))
-          .withTile(state.droneX, state.droneY, state.currentTile.copyWith(crop: crop, watered: false))
+          .copyWith(
+              resources:
+                  state.resources.copyWith(seeds: state.resources.seeds - 1))
+          .withTile(state.droneX, state.droneY,
+              state.currentTile.copyWith(crop: crop, watered: false))
           .appendLog('L${command.sourceLine}: ${crop.label} plantado.');
     case FarmCommandType.water:
       if (!state.currentTile.hasCrop) {
-        return next.appendLog('L${command.sourceLine}: no hay cultivo para regar.');
+        return next
+            .appendLog('L${command.sourceLine}: no hay cultivo para regar.');
       }
       if (state.resources.water <= 0) {
-        return next.appendLog('L${command.sourceLine}: depósito de agua vacío.');
+        return next
+            .appendLog('L${command.sourceLine}: depósito de agua vacío.');
       }
       return next
-          .copyWith(resources: state.resources.copyWith(water: state.resources.water - 1))
-          .withTile(state.droneX, state.droneY, state.currentTile.copyWith(watered: true))
+          .copyWith(
+              resources:
+                  state.resources.copyWith(water: state.resources.water - 1))
+          .withTile(state.droneX, state.droneY,
+              state.currentTile.copyWith(watered: true))
           .appendLog('L${command.sourceLine}: cultivo listo.');
     case FarmCommandType.harvest:
       if (!state.currentTile.readyToHarvest) {
-        return next.appendLog('L${command.sourceLine}: nada listo para cosechar.');
+        return next
+            .appendLog('L${command.sourceLine}: nada listo para cosechar.');
       }
       return next
           .copyWith(resources: state.resources.addCrop(state.currentTile.crop!))
           .withTile(
             state.droneX,
             state.droneY,
-            state.currentTile.copyWith(tilled: false, watered: false, clearCrop: true),
+            state.currentTile
+                .copyWith(tilled: false, watered: false, clearCrop: true),
           )
           .appendLog('L${command.sourceLine}: cosecha recogida.');
     case FarmCommandType.scan:
       if (!state.isTechUnlocked('scanner')) {
-        return next.appendLog('L${command.sourceLine}: scan() requiere Sensor de terreno.');
+        return next.appendLog(
+            'L${command.sourceLine}: scan() requiere Sensor de terreno.');
       }
       final tile = state.currentTile;
       final crop = tile.crop?.label ?? 'vacío';
-      return next.appendLog('L${command.sourceLine}: (${state.droneX}, ${state.droneY}) $crop, regado=${tile.watered}.');
+      return next.appendLog(
+          'L${command.sourceLine}: (${state.droneX}, ${state.droneY}) $crop, regado=${tile.watered}.');
   }
 }
