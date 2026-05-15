@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
 import 'core/app_theme.dart';
-import 'features/home/home_page.dart';
+import 'features/farm/presentation/farm_game_page.dart';
 
 void main() {
-  runApp(const CuteQuestsApp());
+  runApp(const DroneFarmApp());
 }
 
-class CuteQuestsApp extends StatelessWidget {
-  const CuteQuestsApp({super.key});
+class DroneFarmApp extends StatelessWidget {
+  const DroneFarmApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cute Quests AI',
+      title: 'Drone Farm Lab',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      home: const HomePage(),
+      theme: AppTheme.dark,
+      home: const FarmGamePage(),
     );
   }
 }
